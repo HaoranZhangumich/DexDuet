@@ -1,0 +1,25 @@
+# Compatibility pins for the official ARCTIC Python 3.10 / PyTorch 1.13 stack.
+#
+# ARCTIC's requirements.txt intentionally leaves these packages open-ended.
+# Current releases otherwise upgrade torch to CUDA 13 and require NumPy 2,
+# conflicting with docs/setup.md (torch 1.13.0, CUDA 11.6, NumPy 1.22.4).
+torch==1.13.0
+torchvision==0.14.0
+numpy==1.22.4
+scipy==1.7.3
+pytorch-lightning==2.0.0
+torchmetrics==0.11.4
+lightning-utilities==0.8.0
+fsspec==2023.4.0
+matplotlib==3.7.1
+contourpy==1.0.7
+opencv-python==4.7.0.72
+opencv-python-headless==4.7.0.72
+opencv-contrib-python-headless==4.7.0.72
+scikit-image==0.19.3
+PyWavelets==1.4.1
+tifffile==2023.4.12
+Pillow==9.5.0
+networkx==2.8.8
+# pkg_resources was removed from newer setuptools, but Lightning 2.0 imports it.
+setuptools==69.5.1

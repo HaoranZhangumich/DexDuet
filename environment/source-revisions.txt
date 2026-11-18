@@ -1,0 +1,13 @@
+# Source revisions validated by scripts/preflight.py.
+ARCTIC_URL=https://github.com/zc-alexfan/arctic.git
+ARCTIC_REV=49f3eb4b7f01663172576357bb3d95695d7a7689
+GENESIS_URL=https://github.com/MandiZhao/Genesis.git
+GENESIS_REV=e9df2d8f7d30595d65cabdc618c6b5ca8cc657e2
+# Broad-phase overflow fix, applied on top of GENESIS_REV by scripts/setup_dexmachina_env.sh
+# (git am --committer-date-is-author-date, committer DexDuet Authors <dexduet@users.noreply.github.com>); the result is GENESIS_FIXED_REV.
+GENESIS_PATCH=environment/patches/genesis/0001-collider-bound-broad-phase-pair-buffer-guard-pair-co.patch
+GENESIS_FIXED_REV=fca4168f562b0762130932cda68ba09d011336ae
+RL_GAMES_URL=https://github.com/MandiZhao/rl_games.git
+RL_GAMES_REV=2c1a7718a3eed71e7c230b6bb8fb2897b0b1d0c4
+
+# Paper default: torch==2.5.1. RTX 50-series override: torch==2.7.0+cu128.

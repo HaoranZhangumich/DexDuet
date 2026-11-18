@@ -1,0 +1,195 @@
+From fca4168f562b0762130932cda68ba09d011336ae Mon Sep 17 00:00:00 2001
+From: DexDuet Authors <dexduet@users.noreply.github.com>
+Date: Fri, 16 Oct 2026 03:38:47 +0800
+Subject: [PATCH] collider: bound broad-phase pair buffer, guard pair/contact
+ writes, fail loudly on overflow
+
+The SAP broad phase wrote broad_collision_pairs[n_broad_pairs[i_b], i_b] without a bounds check into a buffer
+sized min(group-filtered possible pairs, rigid_options.max_collision_pairs). The runtime validity check does not
+apply the group filter, so with max_collision_pairs=100 lanes produced up to ~176 pairs and the excess writes
+landed in other lanes slots (cross-lane corruption).
+
+- size broad_collision_pairs to the exact number of pairs the runtime rules can emit (no group filter), which is a
+  hard upper bound and independent of max_collision_pairs
+- keep the contact capacity (5 x min(group-filtered pairs, max_collision_pairs)) and the constraint buffers derived
+  from it unchanged, so runs without overflow stay bit-identical
+- bounds-check the 3 broad-phase write sites and _func_add_contact; dropped items increment per-lane counters
+- check_overflow() raises RuntimeError with lane ids/counts if any counter is non-zero; it runs every
+  OVERFLOW_CHECK_EVERY=50 detection calls (physics substeps) and at Collider.reset()
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .../engine/solvers/rigid/collider_decomp.py   | 87 ++++++++++++++-----
+ 1 file changed, 65 insertions(+), 22 deletions(-)
+
+diff --git a/genesis/engine/solvers/rigid/collider_decomp.py b/genesis/engine/solvers/rigid/collider_decomp.py
+index 5bb3ce3..2e397db 100644
+--- a/genesis/engine/solvers/rigid/collider_decomp.py
++++ b/genesis/engine/solvers/rigid/collider_decomp.py
+@@ -99,6 +99,7 @@ class Collider:
+             links_parent_idx = links_parent_idx[:, 0]
+             links_is_fixed = links_is_fixed[:, 0]
+         n_possible_pairs = 0
++        n_possible_pairs_runtime = 0
+         if self._solver._self_collision_group_filter:
+             # get the local link idx for all geoms: 
+             geom_global_link_idx = self._solver.geoms_info.link_idx_local.to_numpy()
+@@ -123,6 +124,10 @@ class Collider:
+                 if links_is_fixed[i_la] and links_is_fixed[i_lb]:
+                     continue
+ 
++                # gsfix: the runtime broad phase (_func_check_collision_valid) applies exactly the rules above and NOT
++                # the group filter below (it is commented out there), so this count bounds n_broad_pairs per lane.
++                n_possible_pairs_runtime += 1
++
+                 if self._solver._self_collision_group_filter:
+                     i_la_loc = geom_global_link_idx[i]
+                     i_lb_loc = geom_global_link_idx[j]
+@@ -134,8 +139,11 @@ class Collider:
+                 n_possible_pairs += 1
+ 
+         self._n_contacts_per_pair = 5
++        # gsfix: contact capacity (and the constraint-solver buffers derived from it) is unchanged on purpose, so runs
++        # that never overflowed stay bit-identical; only the broad-phase pair buffer is resized (_max_broad_pairs).
+         self._max_collision_pairs = min(n_possible_pairs, self._solver._max_collision_pairs)
+         self._max_contact_pairs = self._max_collision_pairs * self._n_contacts_per_pair
++        self._max_broad_pairs = n_possible_pairs_runtime  # exact bound, independent of rigid_options.max_collision_pairs
+ 
+         ############## broad phase SAP ##############
+         # This buffer stores the AABBs along the search axis of all geoms
+@@ -152,8 +160,12 @@ class Collider:
+ 
+         self.n_broad_pairs = ti.field(dtype=gs.ti_int, shape=self._solver._B)
+         self.broad_collision_pairs = ti.Vector.field(
+-            2, dtype=gs.ti_int, shape=self._solver._batch_shape(max(1, self._max_collision_pairs))
++            2, dtype=gs.ti_int, shape=self._solver._batch_shape(max(1, self._max_broad_pairs))
+         )
++        # gsfix: per-lane counts of pairs / contacts dropped because a buffer was full (checked by check_overflow()).
++        self.n_pair_overflow = ti.field(gs.ti_int, shape=self._solver._B)
++        self.n_contact_overflow = ti.field(gs.ti_int, shape=self._solver._B)
++        self._n_detection_calls = 0
+ 
+         self.first_time = ti.field(gs.ti_int, shape=self._solver._B)
+ 
+@@ -218,6 +230,7 @@ class Collider:
+         self.reset()
+ 
+     def reset(self):
++        self.check_overflow()  # gsfix: also check at every scene reset / set_state
+         self.first_time.fill(1)
+         self.contact_cache.i_va_0.fill(-1)
+         self.contact_cache.penetration.fill(0)
+@@ -273,6 +286,27 @@ class Collider:
+             self._func_narrow_phase_nonconvex_nonterrain()
+             timer.stamp("_func_narrow_phase_nonconvex_nonterrain")
+ 
++        # gsfix: fail loudly on any dropped pair/contact. The check costs one host sync (2 x B ints), so it runs only
++        # every OVERFLOW_CHECK_EVERY detection calls (= physics substeps) and at reset(); the counters are cumulative,
++        # so nothing is missed, only reported up to OVERFLOW_CHECK_EVERY - 1 substeps late.
++        self._n_detection_calls += 1
++        if self._n_detection_calls % self.OVERFLOW_CHECK_EVERY == 0:
++            self.check_overflow()
++
++    OVERFLOW_CHECK_EVERY = 50
++
++    def check_overflow(self):
++        """gsfix: raise RuntimeError if any lane ever dropped a broad-phase pair or a contact (buffer full)."""
++        n_pair, n_con = self.n_pair_overflow.to_numpy(), self.n_contact_overflow.to_numpy()
++        bad = np.nonzero((n_pair > 0) | (n_con > 0))[0]
++        if len(bad) > 0:
++            raise RuntimeError(
++                f"Genesis collider overflow in {len(bad)} lane(s) after {self._n_detection_calls} detection calls "
++                f"(pair capacity {self._max_broad_pairs}, contact capacity {self._max_contact_pairs} per lane): "
++                f"lanes {bad[:16].tolist()} dropped pairs {n_pair[bad[:16]].tolist()} "
++                f"dropped contacts {n_con[bad[:16]].tolist()}"
++            )
++
+     @ti.func
+     def _func_point_in_geom_aabb(self, point, i_g, i_b):
+         return (point < self._solver.geoms_state[i_g, i_b].aabb_max).all() and (
+@@ -662,6 +696,17 @@ class Collider:
+ 
+         return is_valid
+ 
++    @ti.func
++    def _func_add_broad_pair(self, i_ga, i_gb, i_b):
++        # gsfix: bounds-checked append (the unchecked write overflowed into other lanes' slots when the buffer was full)
++        i_p = self.n_broad_pairs[i_b]
++        if i_p < self._max_broad_pairs:
++            self.broad_collision_pairs[i_p, i_b][0] = i_ga
++            self.broad_collision_pairs[i_p, i_b][1] = i_gb
++            self.n_broad_pairs[i_b] = i_p + 1
++        else:
++            self.n_pair_overflow[i_b] += 1
++
+     @ti.kernel
+     def _func_broad_phase(self):
+         """
+@@ -742,9 +787,7 @@ class Collider:
+                             if not self._func_check_collision_valid(i_ga, i_gb, i_b):
+                                 continue
+ 
+-                            self.broad_collision_pairs[self.n_broad_pairs[i_b], i_b][0] = i_ga
+-                            self.broad_collision_pairs[self.n_broad_pairs[i_b], i_b][1] = i_gb
+-                            self.n_broad_pairs[i_b] = self.n_broad_pairs[i_b] + 1
++                            self._func_add_broad_pair(i_ga, i_gb, i_b)
+ 
+                         self.active_buffer[n_active, i_b] = self.sort_buffer[i, i_b].i_g
+                         n_active = n_active + 1
+@@ -780,9 +823,7 @@ class Collider:
+                                 if not self._func_check_collision_valid(i_ga, i_gb, i_b):
+                                     continue
+ 
+-                                self.broad_collision_pairs[self.n_broad_pairs[i_b], i_b][0] = i_ga
+-                                self.broad_collision_pairs[self.n_broad_pairs[i_b], i_b][1] = i_gb
+-                                self.n_broad_pairs[i_b] = self.n_broad_pairs[i_b] + 1
++                                self._func_add_broad_pair(i_ga, i_gb, i_b)
+ 
+                             # if incoming geom is awake, also need to check with hibernated geoms
+                             if not is_incoming_geom_hibernated:
+@@ -796,9 +837,7 @@ class Collider:
+                                     if not self._func_check_collision_valid(i_ga, i_gb, i_b):
+                                         continue
+ 
+-                                    self.broad_collision_pairs[self.n_broad_pairs[i_b], i_b][0] = i_ga
+-                                    self.broad_collision_pairs[self.n_broad_pairs[i_b], i_b][1] = i_gb
+-                                    self.n_broad_pairs[i_b] = self.n_broad_pairs[i_b] + 1
++                                    self._func_add_broad_pair(i_ga, i_gb, i_b)
+ 
+                             if is_incoming_geom_hibernated:
+                                 self.active_buffer_hib[n_active_hib, i_b] = self.sort_buffer[i, i_b].i_g
+@@ -1056,18 +1095,22 @@ class Collider:
+         friction_a = ga_info.friction * self._solver.geoms_state[i_ga, i_b].friction_ratio
+         friction_b = gb_info.friction * self._solver.geoms_state[i_gb, i_b].friction_ratio
+ 
+-        # b to a
+-        self.contact_data[i_col, i_b].geom_a = i_ga
+-        self.contact_data[i_col, i_b].geom_b = i_gb
+-        self.contact_data[i_col, i_b].normal = normal
+-        self.contact_data[i_col, i_b].pos = contact_pos
+-        self.contact_data[i_col, i_b].penetration = penetration
+-        self.contact_data[i_col, i_b].friction = ti.max(ti.max(friction_a, friction_b), 1e-2)
+-        self.contact_data[i_col, i_b].sol_params = 0.5 * (ga_info.sol_params + gb_info.sol_params)
+-        self.contact_data[i_col, i_b].link_a = ga_info.link_idx
+-        self.contact_data[i_col, i_b].link_b = gb_info.link_idx
+-
+-        self.n_contacts[i_b] = i_col + 1
++        # gsfix: bounds check (contact capacity is unchanged); a full buffer drops the contact and counts it
++        if i_col < self._max_contact_pairs:
++            # b to a
++            self.contact_data[i_col, i_b].geom_a = i_ga
++            self.contact_data[i_col, i_b].geom_b = i_gb
++            self.contact_data[i_col, i_b].normal = normal
++            self.contact_data[i_col, i_b].pos = contact_pos
++            self.contact_data[i_col, i_b].penetration = penetration
++            self.contact_data[i_col, i_b].friction = ti.max(ti.max(friction_a, friction_b), 1e-2)
++            self.contact_data[i_col, i_b].sol_params = 0.5 * (ga_info.sol_params + gb_info.sol_params)
++            self.contact_data[i_col, i_b].link_a = ga_info.link_idx
++            self.contact_data[i_col, i_b].link_b = gb_info.link_idx
++
++            self.n_contacts[i_b] = i_col + 1
++        else:
++            self.n_contact_overflow[i_b] += 1
+ 
+     @ti.func
+     def _func_compute_tolerance(self, i_ga, i_gb, i_b):
