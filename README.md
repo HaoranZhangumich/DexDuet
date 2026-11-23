@@ -4,12 +4,14 @@
 
 <h3>Learning Contact-Preserving Bimanual Dexterity from Human Demonstrations</h3>
 
-<a href="https://github.com/RCL-Robotics/nv-v2d-hoi"><img alt="2nd place, V2D Challenge Track 2" src="https://img.shields.io/badge/V2D%20Challenge%20Track%202-2nd%20place-2F6B5E?style=flat-square"></a>
+<a href="https://rcl-robotics.github.io/Dexduet.io/"><img alt="Project page" src="https://img.shields.io/badge/Project%20page-online-2F6B5E?style=flat-square"></a>
 <img alt="Paper coming soon" src="https://img.shields.io/badge/Paper-coming%20soon-B7C4BF?style=flat-square">
-<img alt="Project page coming soon" src="https://img.shields.io/badge/Project%20page-coming%20soon-B7C4BF?style=flat-square">
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/License-MIT-B7C4BF?style=flat-square"></a>
 
-<br><br>
+🏆 <b>Industry Innovation Award</b> &nbsp;&nbsp;·&nbsp;&nbsp; 🥈 <b>2nd place, Track 2 (Robotic Grounding)</b><br>
+<a href="https://nvidia-isaac.github.io/video_to_data/v2d_challenge/#leaderboard">NVIDIA Video to Data (V2D) Challenge</a>, CoRL 2026
+
+<br>
 
 <img src="media/teaser.jpg" width="100%" alt="DexDuet preserves the human's contacts, with different robot hands and objects">
 
@@ -17,8 +19,9 @@
 
 <br>
 
-DexDuet learns a bimanual policy from one human demonstration and keeps the human's hand–object contacts. Our method
-placed **2nd in Track 2 of the V2D Challenge**; the implementation for all three tiers is in
+DexDuet learns a bimanual robot policy from a single human demonstration and keeps the human's hand–object contacts.
+
+Our entry to the NVIDIA V2D Challenge is built on DexDuet. The code for all three tiers is in
 [RCL-Robotics/nv-v2d-hoi](https://github.com/RCL-Robotics/nv-v2d-hoi).
 
 ## Across robot hands
