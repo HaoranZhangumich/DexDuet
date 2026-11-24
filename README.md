@@ -22,7 +22,7 @@
 DexDuet learns a bimanual robot policy from a single human demonstration and keeps the human's hand–object contacts.
 
 Our entry to the NVIDIA V2D Challenge is built on DexDuet. The code for all three tiers is in
-[RCL-Robotics/nv-v2d-hoi](https://github.com/RCL-Robotics/nv-v2d-hoi).
+[RCL-Robotics/nv-v2d-challenge-rcl-group-solution](https://github.com/RCL-Robotics/nv-v2d-challenge-rcl-group-solution).
 
 ## Across robot hands
 
@@ -72,7 +72,7 @@ CUDA_VISIBLE_DEVICES=0 python scripts/train_coordinates_hand.py --task Box-200  
 bash scripts/reproduce_paper.sh from-release --suite main      # main table from our checkpoints
 ```
 
-[Checkpoints](https://huggingface.co/oldTOM/dexduet-checkpoints) · [Reproduce the DexMachina-suite tables](REPRODUCE.md) · [Flags and layout](docs/DETAILS.md) · [G1 + Dex3 study](https://github.com/HaoranZhangumich/DexDuet-V2D) · [V2D Challenge, all three tiers](https://github.com/RCL-Robotics/nv-v2d-hoi)
+[Checkpoints](https://huggingface.co/oldTOM/dexduet-checkpoints) · [Reproduce the DexMachina-suite tables](REPRODUCE.md) · [Flags and layout](docs/DETAILS.md) · [G1 + Dex3 study](https://github.com/HaoranZhangumich/DexDuet-V2D) · [V2D Challenge, all three tiers](https://github.com/RCL-Robotics/nv-v2d-challenge-rcl-group-solution)
 
 ## Acknowledgement
 
