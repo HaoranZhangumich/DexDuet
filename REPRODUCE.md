@@ -78,7 +78,7 @@ lists the missing files with the step that creates each one.
 
 For Inspire, `(cd dexmachina/assets && sha256sum -c ../../environment/generated-assets-sha256.txt)` checks the generated
 files against the ones DexDuet's main-table Inspire runs used (row (a) of the ablation table is part of these runs). When
-all of them match, these checkpoints evaluate to the per-run numbers in `dexduet/results/per_run.csv` exactly on an RTX PRO 6000 (section 2.1; on other
+all of them match, these checkpoints evaluate to the per-run values in their `RUN_INFO.json` (`table_metrics`) exactly on an RTX PRO 6000 (section 2.1; on other
 GPUs see section 2.2). The runs of ablation rows
 (b)-(g) were trained with other processings of the same six ARCTIC sequences, whose files differ from the listed ones.
 Each run with the per-hand policy records the sha256 of its own processed demonstration in `config/env.yaml`
@@ -99,13 +99,13 @@ bash scripts/download_checkpoints.sh          # every package into ./checkpoints
 
 | Package | Unpacks to | Contents |
 |---|---|---|
-| `dexduet_dexmachina_suite.zip` | `dexduet/<hand>/<task>/seed<S>/`, `dexduet/results/` | DexDuet's main-table runs: 4 hands x 7 demonstrations x 5 seeds, and the per-run results behind the table |
+| `dexduet_dexmachina_suite.zip` | `dexduet/<hand>/<task>/seed<S>/` | DexDuet's main-table runs: 4 hands x 7 demonstrations x 5 seeds |
 | `dexduet_ablations.zip` | `ablations/row_<b..g>/inspire_hand/<task>/seed<S>/` | ablation rows (b)-(g): 6 rows x 7 demonstrations x 3 seeds; row (a) is the suite's Inspire runs |
 
 Each run folder holds the evaluated checkpoint `<hand>.pth`, its training configuration (`config/agent.yaml`,
 `config/env.yaml`) and `RUN_INFO.json`: the method or ablation row, hand, task, training seed and original run name, the
-checkpoint record (file, sha256, size in bytes, epoch, selection rule and completed PPO updates) and the values the run was
-reported with (`table_metrics`). Runs with the per-hand policy (every run except those of ablation row (e)) also hold
+checkpoint record (file, sha256, size in bytes, epoch, selection rule and completed PPO updates) and the run's evaluated
+values (`table_metrics`). Runs with the per-hand policy (every run except those of ablation row (e)) also hold
 `config/initialization.json` (hashes of the initial network) and `final_checkpoint.json` (the training-end record that the
 evaluator checks the checkpoint against). Every download is checked against `CHECKPOINTS.sha256`.
 
@@ -155,9 +155,9 @@ bash scripts/reproduce_paper.sh dexmachina --archive <path>/dexmachina_main_resu
 Each checkpoint keeps its own `env.pkl` (DexMachina's retargeting), so these runs have their own start states
 (`resets/dexmachina/`). `scripts/relocate_run.py` points the copy's asset paths at this repository, and the repository's
 default agent configuration (DexMachina's network) goes next to it. The training seed of each checkpoint comes from its
-release config (`config.json`, `params.seed`). As in the paper, the last of the 100 lanes starts from DexMachina's zero hand
-pose (`--zero-pose-last-lane`). When that lane resets early, Contact-AUC is recorded with `slip_record.py
---allow-last-lane-reset`, which marks the lane's later states as lost; the paper does the same.
+release config (`config.json`, `params.seed`). As in DexMachina's evaluator, the last of the 100 lanes starts from their zero
+hand pose (`--zero-pose-last-lane`). When that lane resets early, Contact-AUC is recorded with `slip_record.py
+--allow-last-lane-reset`, which marks the lane's later states as lost.
 
 ### 2.4 Tables
 
@@ -218,8 +218,8 @@ bash scripts/reproduce_paper.sh table
 
 `main` runs `scripts/train_coordinates_hand.py`, which trains with the paper's flags, evaluates the best-reward checkpoint
 and scores ADD-AUC and Contact-AUC; `main` then adds SP-SR, MP-SR and MPPE and the summary. Run folders are
-`logs/rl_games/<hand>/<prefix>-coordinates-hand_<task>_seed<S>_*`. For Schunk on the three long demonstrations, `main` sets
-behavior cloning to 0.3, as in the paper's Schunk runs. Run several jobs in parallel by giving each its own GPU, or two per
+`logs/rl_games/<hand>/<prefix>-coordinates-hand_<task>_seed<S>_*`. For Schunk on Ketchup-300, Waffleiron-300 and Notebook-300
+(group A), `main` sets behavior cloning to 0.3, as in the paper's Schunk runs. Run several jobs in parallel by giving each its own GPU, or two per
 GPU.
 
 This repository trains with the collision-pair fix and the corrected reset observation. The paper's other three hands and its
@@ -272,7 +272,7 @@ above, `track2_metrics.py` gives the same values.
 
 The hold test of the main text and the supplementary lets each policy act for 3 s after the last frame with every reference
 frozen there. A run holds the object if the object stays within 5 cm of its final pose for the whole 3 s, and drops it if
-the object falls by more than 10 cm.
+the object ends the 3 s more than 10 cm below its final pose or off the table.
 [dexmachina/eval/hold_test/README.md](dexmachina/eval/hold_test/README.md) gives the protocol.
 
 ```bash
@@ -307,5 +307,5 @@ seeds; off track: runs that end more than 3 cm from the final pose, of 35 per ha
 - **V2D challenge (Unitree G1 with Dex3 hands)**: DexDuet, DexDuet without interaction rewards and CHORD (PPO) on the
   challenge's runtime are in [DexDuet-V2D](https://github.com/HaoranZhangumich/DexDuet-V2D).
 - **SPIDER suite and ManipTrans suite**: DexDuet and the baselines of these two benchmarks are not in this repository.
-- Not included: DexMachina's checkpoints scored with their own first observation, the comparison of runs at equal tracking
-  and the real-robot experiments.
+- Not included: ConTrack on the DexMachina suite with XHand hands, the comparison of runs at equal tracking, the perceptual
+  study and the real-robot experiments.

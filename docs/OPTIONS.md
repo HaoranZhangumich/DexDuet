@@ -27,7 +27,7 @@ Without these options the trainer uses DexMachina's unified policy, as in ablati
 | `--rsi_kf_to_end` | off | A state is kept as a keyframe only once its episode reaches the end of the demonstration, and it is served only while its segment gives at least the assistance that episode had. |
 | `--rsi_kf_confirm 30` | 0 | A state is kept only after its episode continues for 30 more frames. `--rsi_kf_to_end` takes precedence. |
 | `--rsi_grace_bank 8` | 0 | Task reward credited to the early-reset check of episodes that start in the middle of the demonstration. |
-| `--rsi_frame0_share 0.25` | 0 | A quarter of the starts are at the first frame, where evaluation starts. |
+| `--rsi_frame0_share 0.25` | 0 | A quarter of the starts are forced to the first frame, where evaluation starts (λ0 = 0.25); starts drawn in the first segment add to them. |
 
 ## Interaction rewards
 

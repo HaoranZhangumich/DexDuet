@@ -5,7 +5,7 @@
 <h3>Learning Contact-Preserving Bimanual Dexterity from Human Demonstrations</h3>
 
 <a href="https://rcl-robotics.github.io/Dexduet.io/"><img alt="Project page" src="https://img.shields.io/badge/Project%20page-online-2F6B5E?style=flat-square"></a>
-<img alt="Paper coming soon" src="https://img.shields.io/badge/Paper-coming%20soon-B7C4BF?style=flat-square">
+<a href="https://arxiv.org/abs/2611.30495"><img alt="arXiv 2611.30495" src="https://img.shields.io/badge/arXiv-2611.30495-2F6B5E?style=flat-square"></a>
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/License-MIT-B7C4BF?style=flat-square"></a>
 
 🏆 <b>Industry Innovation Award</b> &nbsp;&nbsp;·&nbsp;&nbsp; 🥈 <b>2nd place, Track 2 (Robotic Grounding)</b><br>
@@ -29,7 +29,7 @@ Our entry to the NVIDIA V2D Challenge is built on DexDuet. The code for all thre
 <p align="center"><img src="media/four_hands.gif" width="100%" alt="DexDuet on Mixer-300 with Inspire, Allegro, XHand and Schunk hands"></p>
 <p align="center"><sub>Inspire · Allegro · XHand · Schunk</sub></p>
 
-<p align="center"><img src="media/gallery.jpg" width="100%" alt="DexDuet with four robot hands on the seven DexMachina-suite demonstrations"></p>
+<p align="center"><img src="media/gallery.jpg" width="100%" alt="DexDuet with four robot hands on six of the seven DexMachina-suite demonstrations"></p>
 
 ## Compared with DexMachina
 
@@ -81,10 +81,18 @@ and checkpoints. MIT license, inherited from DexMachina. The ARCTIC object meshe
 MANO hand assets in `dexmachina/assets/mano_hand/` come from DexMachina's repository; the terms of
 [ARCTIC](https://arctic.is.tue.mpg.de/) and [MANO](https://mano.is.tue.mpg.de/) apply to them.
 
-<details>
-<summary>Citation</summary>
+## Citation
 
-The DexDuet citation will follow on publication. Please also cite DexMachina:
+```bibtex
+@article{zhang2026dexduet,
+  title   = {DexDuet: Learning Contact-Preserving Bimanual Dexterity from Human Demonstrations},
+  author  = {Zhang, Haoran and Ding, Haokai and Zhou, Han and Lu, Zuxing and Zhang, Heng and Zuo, Xingxing},
+  journal = {arXiv preprint arXiv:2611.30495},
+  year    = {2026}
+}
+```
+
+Please also cite DexMachina:
 
 ```bibtex
 @inproceedings{mandi2026dexmachina,
@@ -94,5 +102,3 @@ The DexDuet citation will follow on publication. Please also cite DexMachina:
   year      = {2026},
 }
 ```
-
-</details>

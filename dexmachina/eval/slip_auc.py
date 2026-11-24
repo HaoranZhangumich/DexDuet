@@ -1,4 +1,5 @@
-"""Slip-AUC: does the robot hand hold the object where the human held it, without its contacts sliding? (offline, CPU, numpy)
+"""Contact-AUC (called Slip-AUC in the code): does the robot hand hold the object where the human held it, without its
+contacts sliding? (offline, CPU, numpy)
 
 Scores a recording made by dexmachina/eval/slip_record.py (object state and both hands' keypoints for every evaluation lane
 and step) against the human demonstration. Only recorded trajectories are used, no simulator: like ADD-AUC it can score
@@ -16,7 +17,8 @@ Definition (defaults; every constant is a command-line option):
   * Reported next to it: coverage (share of entries where the robot touches the part and the object is not lost), slip score
     when touching, lost share, per hand / part, controls (hand-only, object-only, human reference), lanes, a moving-block
     bootstrap CI over steps, and the sensitivity to every constant.
-  * It measures whether the grip is stable, not whether it is human-like: one contact that does not slide gets full credit.
+  * It scores whether each robot hand stays, without sliding, on the part the human hand holds: one non-sliding contact on
+    that part gets full credit.
 
 Human data: the per-sequence MANO export written by dexmachina/hand_proc/export_mano_vertices.py (ARCTIC environment), the
 same export the hand-object contact reward is built from; the clip's frames are taken from it.

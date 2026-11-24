@@ -6,7 +6,7 @@
 #   bash scripts/download_checkpoints.sh dexduet_ablations.zip   # one package
 #
 # Packages (each unpacks into $DEXDUET_CHECKPOINTS):
-#   dexduet_dexmachina_suite.zip         dexduet/<hand>/<task>/seed<S>/ and dexduet/results/   (main table, four hands)
+#   dexduet_dexmachina_suite.zip         dexduet/<hand>/<task>/seed<S>/                        (main table, four hands)
 #   dexduet_ablations.zip                ablations/row_<b..g>/inspire_hand/<task>/seed<S>/      (6 rows x 7 tasks x 3 seeds;
 #                                        row (a) is the suite's Inspire runs)
 # Each run folder holds <hand>.pth, config/{agent.yaml,env.yaml}, RUN_INFO.json and, for runs with the per-hand policy

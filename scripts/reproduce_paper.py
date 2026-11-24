@@ -252,7 +252,7 @@ def write_summary(run_dir, task, hand, label, seed, group, updates=None):
 
 # ---------------------------------------------------------------------------------------------------------------- release
 # The released packages (scripts/download_checkpoints.sh) and the folder each unpacks to under $DEXDUET_CHECKPOINTS.
-PACKAGES = {'dexduet_dexmachina_suite.zip': 'dexduet',        # dexduet/<hand>/<task>/seed<S>/ and dexduet/results/
+PACKAGES = {'dexduet_dexmachina_suite.zip': 'dexduet',        # dexduet/<hand>/<task>/seed<S>/
             'dexduet_ablations.zip': 'ablations'}              # ablations/row_<b..g>/inspire_hand/<task>/seed<S>/
 SUITE_PACKAGES = {'main': ['dexduet_dexmachina_suite.zip'],
                   'ablation': ['dexduet_dexmachina_suite.zip', 'dexduet_ablations.zip'],   # row (a) = the suite's Inspire runs
